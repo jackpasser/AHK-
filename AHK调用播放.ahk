@@ -159,7 +159,7 @@ UpdateGuiTitle() {
     ; ─── 优化：只在百分比改变时重新生成进度条 ───
     static lastPercent := -1
     static cachedProgressBar := ""
-    
+
     if (Round(percentNum) != lastPercent) {
         lastPercent := Round(percentNum)
         barLength := 50
@@ -195,10 +195,25 @@ UpdateGuiTitle() {
 ; 辅助函数：检查是否可以响应快捷键
 IsPlayerActive() {
     global MyGui, mpvHandle
-    return (IsSet(MyGui) && MyGui && WinActive("ahk_id " MyGui.Hwnd) && mpvHandle)
+    return (IsSet(MyGui) && MyGui && WinActive("ahk_id " . MyGui.Hwnd) && mpvHandle)
 }
 
-#HotIf IsPlayerActive()
+; 辅助函数：检查鼠标是否在程序 GUI 内
+IsMouseInGui() {
+    global MyGui
+    if (!IsSet(MyGui) || !MyGui)
+        return false
+
+    MouseGetPos(&x, &y, &hwnd)
+    while (hwnd) {
+        if (hwnd = MyGui.Hwnd)
+            return true
+        hwnd := DllCall("GetParent", "Ptr", hwnd, "Ptr")
+    }
+    return false
+}
+
+#HotIf IsPlayerActive() && IsMouseInGui()
 
 ; --- 键盘快捷键 ---
 Space:: MpvCommand(mpvHandle, ["cycle", "pause"])      ; 暂停/播放
