@@ -12,6 +12,7 @@ global mpvHandle     := 0
 global hModule       := 0
 global MyGui         := 0
 global currentFileName := ""
+global videoFileToPlay := ""
 
 ; 💡 2. 智能检索路径逻辑：如果共享路径有 DLL 就用共享的，否则检查本地同级目录
 if FileExist(sharedDllPath) {
@@ -22,6 +23,11 @@ if FileExist(sharedDllPath) {
     ; 两个地方都没有，才弹出错误提示
     MsgBox "错误：找不到播放内核 libmpv-2.dll`n请检查以下路径之一是否存有该文件：`n1. " sharedDllPath "`n2. " localDllPath
     ExitApp
+}
+
+; ✨ 💡 处理命令行参数（从"打开方式"或命令行传入的文件路径）
+if (A_Args.Length > 0) {
+    videoFileToPlay := A_Args[1]
 }
 
 ; 缓存最后一次的GUI标题，避免不必要的更新
@@ -42,6 +48,11 @@ MyGui.OnEvent("DropFiles", OnGuiDropFiles)
 OnMessage(0x0203, OnGuiClick)
 
 MyGui.Show("w1280 h720")
+
+; ✨ 💡 如果通过命令行参数传入了文件，在 GUI 显示后立即播放
+if (videoFileToPlay != "" && FileExist(videoFileToPlay)) {
+    StartMpvPlayer(videoFileToPlay)
+}
 
 ; ==============================================================================
 ; 3. 文件获取与播放核心逻辑
@@ -227,10 +238,10 @@ NumpadEnter:: ToggleFullScreen()                      ; 小键盘回车切换全
 
 ; --- 鼠标快捷键 ---
 MButton::   MpvCommand(mpvHandle, ["cycle-values", "video-zoom", "0", "0.333"])
-WheelUp::   MpvCommand(mpvHandle, ["add", "volume", "5"])   ; 滚轮上：音量 +
-WheelDown:: MpvCommand(mpvHandle, ["add", "volume", "-5"])  ; 滚轮下：音量 -
-XButton1::  MpvCommand(mpvHandle, ["seek", "5"])     ; 侧前键：后退
-XButton2::  MpvCommand(mpvHandle, ["seek", "-5"])      ; 侧后键：前进
+XButton2::   MpvCommand(mpvHandle, ["add", "volume", "5"])   ; 滚轮上：音量 +
+XButton1:: MpvCommand(mpvHandle, ["add", "volume", "-5"])  ; 滚轮下：音量 -
+WheelDown::  MpvCommand(mpvHandle, ["seek", "5"])     ; 侧前键：后退
+WheelUp::  MpvCommand(mpvHandle, ["seek", "-5"])      ; 侧后键：前进
 RButton::   MpvCommand(mpvHandle, ["cycle", "pause"])  ; 右键暂停
 
 ; 鼠标左键：双击全屏
